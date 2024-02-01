@@ -1,0 +1,113 @@
+---
+title: "Untitled"
+output:
+  pdf_document: default
+  html_document: default
+date: "2024-01-30"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+#install.packages("ggplot2")
+library(tidyverse)
+library(readxl)
+```
+
+```{r}
+library(ggplot2)
+
+Dupont<-read_xlsx("Dupont (1).xlsx")
+```
+
+```{r}
+ #Q3.A #What are trends in the EPS for different industries over time? 
+Dupont |> 
+  filter(Year >= 2017 & Year <= 2023) |> 
+  group_by(Industry, Year) |> 
+  summarize(Diluted_EPS = median(`Earnings Per Share (Diluted) - Excluding Extraordinary Items`, na.rm = TRUE), .groups = 'drop') |> 
+  ggplot(aes(x = Year, y = Diluted_EPS, color = Industry)) + facet_wrap(~Industry) +
+  geom_line() +
+  labs(x = "Year", y = "Diluted_EPS", color = "Industry")
+
+
+```
+
+```{r}
+#Q3.A  EPS WITHOUT FACET WRAP
+Dupont |> 
+  #filter(Year >= 2017 & Year <= 2023) |> 
+  group_by(Industry, Year) |> 
+  summarize(Diluted_EPS = median(`Earnings Per Share (Diluted) - Excluding Extraordinary Items`, na.rm = TRUE), .groups = 'drop') |> #.groups suggested by RStudio
+  ggplot(aes(x = Year, y = Diluted_EPS, color = Industry)) +
+  geom_line() +
+  labs(x = "Year", y = "Diluted_EPS", color = "Industry")
+
+```
+
+```{r}
+Dupont |> 
+  filter(Year >= 2017 & Year <= 2023) |> 
+  group_by(Industry, Year) |> 
+  summarize(Diluted_EPS = median(`Earnings Per Share (Diluted) - Excluding Extraordinary Items`, na.rm = TRUE), .groups = 'drop') |> 
+  ggplot(aes(x = Year, y = Diluted_EPS , fill = Industry)) + facet_wrap(~Industry) +
+  geom_col(position = "dodge", color = "black", width = 0.9) +
+  labs(title = "Bar Plot of Diluted_EPS", x = "Year", y = "color = Industry", fill = "Industry")
+```
+
+```{r}
+# Q4 A WITHOUT FACET 
+#Which industries tend to have the highest liquidity ratios, and what are trends in liquidity over time?
+
+Dupont |> 
+  #filter(Year >= 2016 & Year <= 2023) |> 
+  group_by(Industry, Year) |> 
+  summarize(Liquidity = median(`Current Assets - Total` / `Current Liabilities - Total`, na.rm = TRUE), .groups = 'drop') |> 
+  ggplot(aes(x = Year, y = Liquidity, color = Industry)) +
+  geom_line() +
+  labs(x = "Year", y = "Liquidity", color = "Industry")
+```
+
+```{r}
+Dupont |> 
+  filter(Year >= 2016 & Year <= 2023) |> 
+  group_by(Industry, Year) |> 
+  summarize(Liquidity = median(`Current Assets - Total` / `Current Liabilities - Total`, na.rm = TRUE), .groups = 'drop') |> 
+    ggplot(aes(x = Year, y = Liquidity, color = Industry)) +     facet_wrap(~Industry)+
+  geom_line() +
+  labs(x = "Year", y = "Liquidity", color = "Industry")
+```
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+Dupont |> 
+  filter(Year >= 2016 & Year <= 2023) |> 
+  group_by(Industry, Year) |> 
+  summarize(Liquidity = median(`Current Assets - Total` / `Current Liabilities - Total`, na.rm = TRUE), .groups = 'drop') |> 
+  
+  ggplot(aes(x = Year, y = Liquidity, fill = Industry)) + #facet_wrap(~Industry) +
+  geom_col(position = "dodge", color = "black", width = 0.9) +
+  labs(title = "Bar Plot of Median Liquidity", x = "Year", y = "Median Liquidity", fill = "Industry") |> 
+```
+
+\`\`\`
