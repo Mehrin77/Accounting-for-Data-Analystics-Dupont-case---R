@@ -1,0 +1,244 @@
+---
+title: "Untitled"
+output:
+  pdf_document: default
+  html_document: default
+date: "2024-01-30"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+#install.packages("ggplot2")
+library(tidyverse)
+library(readxl)
+```
+
+
+```{r}
+Dupont<-read_xlsx("Dupont.xlsx")
+```
+
+You are tasked with analyzing the trends in the frequency of large negative special items for
+different industries, from 2017-2022. Special items on the income statement represent the sum
+of significant one-time gains and losses, such as M&A expense, restructuring expense, asset
+impairments, and litigation gains and losses.
+Large negative special item firm-years are firm years where a) the Special Items account is
+negative and b) negative Special Items are greater than 1% of assets. Note that both Real
+Estate and Utilities are excluded in both graphs below.
+part a)
+Please produce both types of trend graphs below, for years 2017-2022. The y-axis for the
+graph is the percent of firms for each industry-year with large negative special items1
+```{r}
+  Dupont %>%                                  
+  filter(Year >= 2017) |> filter(Year<=2022) |>
+  filter(Industry!="Real Estate") |> filter(Industry!="Utilities") %>% 
+  
+  mutate(PercSI=`Special Items`/`Total Assets`) %>% 
+  mutate(LargeNegSI=dplyr::if_else((PercSI<(-0.01)),1,0)) %>% 
+  filter(!(is.na(LargeNegSI))) %>% 
+  group_by(Industry, Year) %>%
+  summarize(count=n(),largepercsi=(sum(LargeNegSI)/count)) %>% distinct() |> 
+  ggplot(aes(x=Year,
+             y=largepercsi,
+             color=Industry)) +
+  geom_line() +
+  labs(x="Year",
+       y="Percent Negative",
+       color="Industry")
+```
+1b) What are the advantages and disadvantages of each type of graph in part a), for the purpose of conveying information about differences among industries in trends in the frequency of large, negative special items? Which of the two would you ultimately choose to use in an investment client presentation? 
+
+One advantage of the colored line graph is that you can compare the frequencies of large, negative special items in all industries under one singular axis. Consequently, it becomes easier to formulate direct comparisons between industries at a glance. Additionally, the graph can effectively convey how the trends among frequencies of large, negative special items across industries align or diverge over time. A clear disadvantage of the colored line graph is that, because the amount of negative special items across industries is not directly correlated with each other, the high activity volumes in certain industries (e.g. “Energy”) can undermine the significance of others (e.g. “Financials”). Another disadvantage of the colored line graph is that the overlapping of lines can make it difficult to distinguish between a few industries. For example, if one wanted to compare the frequencies of large special items between the Energy and Financials industries, it can be difficult to compare the two trend lines when several other trend lines are running across the graph as well.  
+
+
+One advantage of the facet wrap graph is that each industry has its respective panel, making it easier to focus on individual trends without distraction from all other industry trends. In other words, facets allow individuals to make comparisons between industries while looking at each trend in isolation. One disadvantage is that the trends across industries are not as immediately apparent since you have to scan across multiple panels to compare across industries over time. A second disadvantage is that the axes are repeated for each panel, which may look confusing at first glance until one finds that each panel represents the same time frame and percentage scale. 
+
+
+Considering the data represents trends in the frequency of large, negative special items, making it a fairly specific analysis, and assuming that investment clients would benefit from a focused analysis on an industry-by-industry basis, the facet wrap graph might be the better choice. This would allow for a clearer presentation of each industry, making it easier for clients to understand the particular trends that could affect their investment decisions within each sector. Additionally, if a client wanted to narrow their investment focus down to a specific industry sector, they may easily turn to the desired industry panel and clearly analyze the trend of large, negative special item frequencies. 
+
+
+```{r}
+Dupont |>
+  filter(Year >= 2017) |> filter(Year<=2022) |>
+  filter(Industry!="Real Estate") |> filter(Industry!="Utilities") |>
+  
+  mutate(PercSI=`Special Items`/`Total Assets`) |>
+  mutate(LargeNegSI=dplyr::if_else((PercSI<(-0.01)),1,0)) |>
+  filter(!(is.na(LargeNegSI))) |> 
+  group_by(Industry, Year) |> 
+  summarize(count=n(),largepercsi=(sum(LargeNegSI)/count)) |> 
+  ggplot(aes(x=Year,
+             y=largepercsi)) + facet_wrap(~Industry) +
+  geom_line() +
+  labs(x="Year",
+       y="Percent Negative",
+       color="Industry")
+```
+Question 2:
+When the ratio of capital expenditures to depreciation is less than 1, we often worry that
+managers are not investing sufficiently in long-term productive assets, to maintain their firms’
+productive capacity.
+part a)
+
+Using a line graph, please plot the median of the ratio of Capital Expenditures to Depre-
+ciation, by year, from 2016 to 2023; in contrast to Question 1, you need not do this by
+
+industry, but make sure to exclude Financials from your calculations. To calculate deprecia-
+tion, you should take Depreciation and Amortization from the income statement and subtract
+
+the Amortization of Intangibles amount for each firm-year.
+
+```{r}
+Dupont |> 
+ mutate(Depreciation= `Depreciation and Amortization` - `Amortization of Intangibles`) |>  
+  filter(Year>=2016) |> filter(Year<=2023)  |> 
+  filter(Industry != "Financials") |> 
+  mutate(ratio_capex_dep =`Capital Expenditures`/ `Depreciation`) |>
+  filter(!(is.na(ratio_capex_dep))) |> 
+  group_by(Year) |> summarize(Med_capex_dep=median(ratio_capex_dep)) |> 
+  
+  ggplot(aes(x=Year,
+             y=Med_capex_dep)) +
+  geom_line() +
+  labs(x="Year",
+       y="median(ratio_capex_dep") 
+  
+```
+  2b) In essence, the yearly plot graph displays the relationship between capital expenditures and asset depreciation across various industries from 2016 to 2023. On average, the industries that were sampled featured a ratio that exceeded 1.0, a key indicator of good financial stability, signifying that companies are effectively generating the funds required to invest in asset acquisitions. However, in 2020, the ratio plummeted sharply before reaching an all-time high in 2022.
+
+A possible explanation for the decrease in the aforementioned metric can be attributed to the COVID-19 pandemic, which was marked by extreme uncertainty due to a decline in demand across various industries. Because the “capital expenditures” category encompasses all present-day investments that will yield future earnings, it is possible that many companies chose to postpone investments when met with a decrease in transaction volume.
+  
+Question 3:
+
+What are trends in the diluted EPS for different industries over time?
+
+```{r}
+ #Q3.A #What are trends in the EPS for different industries over time?
+
+Dupont |> 
+  filter(Year >= 2017 & Year <= 2023) |> 
+  group_by(Industry, Year) |> 
+  summarize(Diluted_EPS = median(`Earnings Per Share (Diluted) - Excluding Extraordinary Items`, na.rm = TRUE), .groups = 'drop') |> #.groups suggested by RStudio
+  ggplot(aes(x = Year, y = Diluted_EPS, color = Industry)) +
+  geom_line() +
+  labs(x = "Year", y = "Diluted_EPS", color = "Industry")
+
+
+```
+```{r}
+#Q3.A  EPS WIth FACET WRAP
+Dupont |> 
+  #filter(Year >= 2017 & Year <= 2023) |> 
+  group_by(Industry, Year) |> 
+  summarize(Diluted_EPS = median(`Earnings Per Share (Diluted) - Excluding Extraordinary Items`, na.rm = TRUE), .groups = 'drop') |> #.groups suggested by RStudio
+  ggplot(aes(x = Year, y = Diluted_EPS, color = Industry)) + facet_wrap(~Industry) + 
+  geom_line() +
+  labs(x = "Year", y = "Diluted_EPS", color = "Industry")
+
+
+```
+Analyzing the trends in diluted earnings per share from 2017 to 2023 across various industries reveals a diverse economic landscape shaped by external events, likely the COVID-19 pandemic, and companies’ subsequent recovery efforts. The Consumer Discretionary industry shows a general decline over the period, suggesting a potential reduction in non-essential consumer spending. In contrast, Consumer Staples present a stable, slightly positive trajectory after 2021, highlighting the consistent demand for essential goods since then.
+
+The Energy industry experienced a sharp downturn in 2020, likely due to plummeting oil prices and decreased demand during global lockdowns, before rising in 2021 as economies reopened and travel resumed. Financials also mirrored this pattern, with a drop in 2020 followed by a short recovery, and downward trend by 2022.
+
+Health Care displayed a slightly negative growth trend throughout the 2020 year, with a rise by 2021 onward. Industrial and Materials industries experienced a short decline during 2020, with a recovery in 2021, which could be attributed to the revival of manufacturing and construction activities following the pandemic.
+
+Information Technology stands out with a steady increase in diluted EPS. Real Estate has shown a downward trend through the years 2016 to 2023.
+
+Telecommunications depicts a slight declining trend over these years, which could be indicative of market saturation or competitive pressures. Lastly, the Utilities industry exhibits a slight but consistent decline in diluted EPS from 2020 onward.
+
+Q4:Which industries tend to have the highest liquidity ratios, and what are trends in liquidity over time?
+
+
+```{r}
+# Q4
+#Which industries tend to have the highest liquidity ratios, and what are trends in liquidity over time? 
+
+Dupont |> 
+  group_by(Industry, Year) |> 
+  summarize(Liquidity = median(`Current Assets - Total` / `Current Liabilities - Total`, na.rm = TRUE), .groups = 'drop') |> 
+  ggplot(aes(x = Year, y = Liquidity, color = Industry)) +
+  geom_line() +
+  labs(x = "Year", y = "Liquidity", color = "Industry")
+
+
+```
+```{r}
+# Q4 B WITH FACET
+#Liquidity but in histogram (Mehrin doing for funzie)
+
+library(ggplot2)
+library(dplyr)
+
+Dupont |> 
+  filter(Year >= 2016 & Year <= 2023) |> 
+  group_by(Industry, Year) |> 
+  summarize(Liquidity = median(`Current Assets - Total` / `Current Liabilities - Total`, na.rm = TRUE), .groups = 'drop') |> 
+  
+  ggplot(aes(x = Year, y = Liquidity, fill = Industry)) + facet_wrap(~Industry) +
+  geom_col(position = "dodge", color = "white", width = 0.5) +
+  labs(x = "Year", y = "Median Liquidity", fill = "Industry")
+
+```
+
+
+According to the data, the Financials industry stands out with a modest increase in liquidity around 2020, possibly as a response to the economic uncertainty and increased risk at the onset of the COVID-19 pandemic, which necessitated higher liquidity reserves. However, in the years following the pandemic, liquidity within the financial sector has decreased as far as pre-pandemic levels, which can be explained in part by the increase in short-term loan activity during the post-pandemic period.
+
+The Health Care industry also generally reports higher liquidity ratios, hovering between 2 to 4 throughout the period. This could be attributed to the need to ensure enough liquid assets to cover unpredictable expenses in the dynamic healthcare environment.
+
+In contrast, industries such as Consumer Discretionary and Energy typically show lower liquidity ratios, often ranging from 1 to 2. This could suggest a tighter cash flow or a lower proportion of liquid assets relative to current liabilities, which may be characteristic of the capital-intensive nature of these industries and their potentially longer operational cycles.
+
+The Energy sector, however, exhibits an upturn in liquidity in 2022. Information Technology and Industrials show moderate liquidity ratios with minimal fluctuations, suggesting steady cash management practices and a balanced approach to maintaining liquid assets.
+
+Consumer Staples, Materials, and Telecommunications industries also display stable liquidity trends, with ratios that indicate they have enough liquid assets to meet short-term obligations without holding excessive liquidity that could otherwise be invested for higher returns.
+
+Utilities show lower liquidity ratios. This might reflect a heavy reliance on consistent cash flows from operations to meet obligations, minimizing the need for holding large amounts of liquid assets.
+
+
+Recommendations: 
+
+
+
+
+```{r}
+
+
+ Dupont %>%
+  filter(Year >= 2016 & Year <= 2023) %>%
+  group_by(Name, Industry) %>%
+  summarize(Median_diluted_EPS = median(`Earnings Per Share (Diluted) - Excluding Extraordinary Items`, na.rm = TRUE), .groups = 'drop') %>%
+  filter(Industry == "Industrials") %>%
+  arrange(desc(Median_diluted_EPS))
+
+```
+```{r}
+ Dupont %>%
+  filter(Year >= 2016 & Year <= 2023) %>%
+  group_by(Name, Industry) %>%
+  summarize(median_liquidity = median(`Current Assets - Total` / `Current Liabilities - Total`, na.rm = TRUE), .groups = 'drop') %>%
+  filter(Industry == "Industrials") %>%
+  arrange(desc(median_liquidity)) %>% 
+  arrange(Name)
+
+```
+
